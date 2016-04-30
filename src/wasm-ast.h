@@ -81,6 +81,7 @@ typedef enum WasmExprType {
   WASM_EXPR_TYPE_STORE,
   WASM_EXPR_TYPE_UNARY,
   WASM_EXPR_TYPE_UNREACHABLE,
+  WASM_NUM_EXPR_TYPES,
 } WasmExprType;
 
 typedef struct WasmBinding {
@@ -492,6 +493,10 @@ WasmImportPtr wasm_get_import_by_var(const WasmModule* module,
                                      const WasmVar* var);
 WasmExportPtr wasm_get_export_by_name(const WasmModule* module,
                                       const WasmStringSlice* name);
+WasmResult wasm_get_local_type_by_var(const WasmModule* module,
+                                      const WasmFunc* func,
+                                      const WasmVar* var,
+                                      WasmType* out_type);
 
 void wasm_make_type_binding_reverse_mapping(
     struct WasmAllocator*,

@@ -1,0 +1,25 @@
+;;; TOOL: run-asmjs
+(module
+  (func $add (param $x i32) (param $y i32) (result i32)
+    (i32.add
+      (get_local 0)
+      (get_local 1)))
+  (export "add" $add))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0($p0, $p1) {
+      $p0 = $p0|0;
+      $p1 = $p1|0;
+      return $p0 + $p1|0;
+    }
+    return {
+      add: $f0,
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

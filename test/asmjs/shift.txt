@@ -1,0 +1,55 @@
+;;; TOOL: run-asmjs
+(module
+  (func $i32
+    ;; SHL
+    (i32.shl (i32.const 1) (i32.const 2))
+    (i32.shl
+      (i32.shl (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.shl
+      (i32.const 3)
+      (i32.shl (i32.const 1) (i32.const 2)))
+
+    ;; SHR_S
+    (i32.shr_s (i32.const 1) (i32.const 2))
+    (i32.shr_s
+      (i32.shr_s (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.shr_s
+      (i32.const 3)
+      (i32.shr_s (i32.const 1) (i32.const 2)))
+
+    ;; SHR_U
+    (i32.shr_u (i32.const 1) (i32.const 2))
+    (i32.shr_u
+      (i32.shr_u (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.shr_u
+      (i32.const 3)
+      (i32.shr_u (i32.const 1) (i32.const 2))))
+
+  ;; TODO: i64
+)
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      1 << 2;
+      1 << 2 << 3;
+      3 << (1 << 2);
+      1 >> 2;
+      1 >> 2 >> 3;
+      3 >> (1 >> 2);
+      1 >>> 2;
+      1 >>> 2 >>> 3;
+      3 >>> (1 >>> 2);
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

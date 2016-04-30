@@ -33,6 +33,9 @@ WasmResult wasm_check_names(WasmAstLexer*,
 
 /* perform all checks on the AST; the module is valid if and only if this
  * function succeeds. */
+WasmResult wasm_check_ast_module(WasmAstLexer*,
+                                 const struct WasmModule*,
+                                 WasmSourceErrorHandler*);
 WasmResult wasm_check_ast(WasmAstLexer*,
                           const struct WasmScript*,
                           WasmSourceErrorHandler*);

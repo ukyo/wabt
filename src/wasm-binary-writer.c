@@ -691,6 +691,9 @@ static void write_expr(Context* ctx,
     case WASM_EXPR_TYPE_UNREACHABLE:
       write_opcode(&ctx->stream, WASM_OPCODE_UNREACHABLE);
       break;
+    default:
+      assert(0);
+      break;
   }
 }
 

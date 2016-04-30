@@ -1,0 +1,40 @@
+;;; TOOL: run-asmjs
+(module
+  (import $iv "test" "iv" (result i32))
+  (import $vi "test" "vi" (param i32))
+  (import $fii "test" "fii" (param i32 i32) (result f32))
+  (import $dff "test" "dff" (param f32 f32) (result f64))
+
+  (func (result i32) (call_import $iv))
+  (func (call_import $vi (i32.const 1)))
+  (func (result f32) (call_import $fii (i32.const 1) (i32.const 2)))
+  (func (result f64) (call_import $dff (f32.const 1) (f32.const 2)))
+)
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    var $i0 = ffi.test.iv;
+    var $i1 = ffi.test.vi;
+    var $i2 = ffi.test.fii;
+    var $i3 = ffi.test.dff;
+    function $f0() {
+      return $i0()|0;
+    }
+    function $f1() {
+      $i1(1);
+    }
+    function $f2() {
+      return $i2(1, 2);
+    }
+    function $f3() {
+      return $i3($$fround(1.000000), $$fround(2.000000));
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

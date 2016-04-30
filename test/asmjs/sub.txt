@@ -1,0 +1,57 @@
+;;; TOOL: run-asmjs
+(module
+  (func $i32
+    (i32.sub (i32.const 1) (i32.const 2))
+    (i32.sub
+      (i32.sub (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.sub
+      (i32.const 3)
+      (i32.sub (i32.const 1) (i32.const 2))))
+
+  ;; TODO: i64
+
+  (func $f32
+    (f32.sub (f32.const 1) (f32.const 2))
+    (f32.sub
+      (f32.sub (f32.const 1) (f32.const 2))
+      (f32.const 3))
+    (f32.sub
+      (f32.const 3)
+      (f32.sub (f32.const 1) (f32.const 2))))
+
+  (func $f64
+    (f64.sub (f64.const 1) (f64.const 2))
+    (f64.sub
+      (f64.sub (f64.const 1) (f64.const 2))
+      (f64.const 3))
+    (f64.sub
+      (f64.const 3)
+      (f64.sub (f64.const 1) (f64.const 2)))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      1 - 2;
+      (1 - 2|0) - 3;
+      3 - (1 - 2|0);
+    }
+    function $f1() {
+      $$fround(1.000000) - $$fround(2.000000);
+      $$fround($$fround(1.000000) - $$fround(2.000000)) - $$fround(3.000000);
+      $$fround(3.000000) - $$fround($$fround(1.000000) - $$fround(2.000000));
+    }
+    function $f2() {
+      1.000000 - 2.000000;
+      1.000000 - 2.000000 - 3.000000;
+      3.000000 - (1.000000 - 2.000000);
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

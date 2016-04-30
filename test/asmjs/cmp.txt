@@ -1,0 +1,187 @@
+;;; TOOL: run-asmjs
+(module
+  (func $i32_eq
+    (i32.eq (i32.const 1) (i32.const 2))
+    (i32.eq
+      (i32.eq (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.eq
+      (i32.const 3)
+      (i32.eq (i32.const 1) (i32.const 2))))
+
+  (func $i32_ne
+    (i32.ne (i32.const 1) (i32.const 2))
+    (i32.ne
+      (i32.ne (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.ne
+      (i32.const 3)
+      (i32.ne (i32.const 1) (i32.const 2))))
+
+  (func $i32_lt_s
+    (i32.lt_s (i32.const 1) (i32.const 2))
+    (i32.lt_s
+      (i32.lt_s (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.lt_s
+      (i32.const 3)
+      (i32.lt_s (i32.const 1) (i32.const 2))))
+
+  (func $i32_lt_u
+    (i32.lt_u (i32.const 1) (i32.const 2))
+    (i32.lt_u
+      (i32.lt_u (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.lt_u
+      (i32.const 3)
+      (i32.lt_u (i32.const 1) (i32.const 2))))
+
+  (func $i32_gt_s
+    (i32.gt_s (i32.const 1) (i32.const 2))
+    (i32.gt_s
+      (i32.gt_s (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.gt_s
+      (i32.const 3)
+      (i32.gt_s (i32.const 1) (i32.const 2))))
+
+  (func $i32_gt_u
+    (i32.gt_u (i32.const 1) (i32.const 2))
+    (i32.gt_u
+      (i32.gt_u (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.gt_u
+      (i32.const 3)
+      (i32.gt_u (i32.const 1) (i32.const 2))))
+
+  (func $i32_le_s
+    (i32.le_s (i32.const 1) (i32.const 2))
+    (i32.le_s
+      (i32.le_s (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.le_s
+      (i32.const 3)
+      (i32.le_s (i32.const 1) (i32.const 2))))
+
+  (func $i32_le_u
+    (i32.le_u (i32.const 1) (i32.const 2))
+    (i32.le_u
+      (i32.le_u (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.le_u
+      (i32.const 3)
+      (i32.le_u (i32.const 1) (i32.const 2))))
+
+  (func $i32_ge_s
+    (i32.ge_s (i32.const 1) (i32.const 2))
+    (i32.ge_s
+      (i32.ge_s (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.ge_s
+      (i32.const 3)
+      (i32.ge_s (i32.const 1) (i32.const 2))))
+
+  (func $i32_ge_u
+    (i32.ge_u (i32.const 1) (i32.const 2))
+    (i32.ge_u
+      (i32.ge_u (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.ge_u
+      (i32.const 3)
+      (i32.ge_u (i32.const 1) (i32.const 2))))
+
+  ;; TODO: i64
+
+  (func $f32
+    (f32.eq (f32.const 1) (f32.const 2))
+    (f32.ne (f32.const 1) (f32.const 2))
+    (f32.lt (f32.const 1) (f32.const 2))
+    (f32.gt (f32.const 1) (f32.const 2))
+    (f32.le (f32.const 1) (f32.const 2))
+    (f32.ge (f32.const 1) (f32.const 2)))
+
+  (func $f64
+    (f64.eq (f64.const 1) (f64.const 2))
+    (f64.ne (f64.const 1) (f64.const 2))
+    (f64.lt (f64.const 1) (f64.const 2))
+    (f64.gt (f64.const 1) (f64.const 2))
+    (f64.le (f64.const 1) (f64.const 2))
+    (f64.ge (f64.const 1) (f64.const 2))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      1 == 2;
+      (1 == 2|0) == 3;
+      3 == (1 == 2|0);
+    }
+    function $f1() {
+      1 != 2;
+      (1 != 2|0) != 3;
+      3 != (1 != 2|0);
+    }
+    function $f2() {
+      1 < 2;
+      (1 < 2|0) < 3;
+      3 < (1 < 2|0);
+    }
+    function $f3() {
+      1 < 2;
+      (1 < 2>>>0) < 3;
+      3 < (1 < 2>>>0);
+    }
+    function $f4() {
+      1 > 2;
+      (1 > 2|0) > 3;
+      3 > (1 > 2|0);
+    }
+    function $f5() {
+      1 > 2;
+      (1 > 2>>>0) > 3;
+      3 > (1 > 2>>>0);
+    }
+    function $f6() {
+      1 <= 2;
+      (1 <= 2|0) <= 3;
+      3 <= (1 <= 2|0);
+    }
+    function $f7() {
+      1 <= 2;
+      (1 <= 2>>>0) <= 3;
+      3 <= (1 <= 2>>>0);
+    }
+    function $f8() {
+      1 >= 2;
+      (1 >= 2|0) >= 3;
+      3 >= (1 >= 2|0);
+    }
+    function $f9() {
+      1 >= 2;
+      (1 >= 2>>>0) >= 3;
+      3 >= (1 >= 2>>>0);
+    }
+    function $f10() {
+      $$fround(1.000000) == $$fround(2.000000);
+      $$fround(1.000000) != $$fround(2.000000);
+      $$fround(1.000000) < $$fround(2.000000);
+      $$fround(1.000000) > $$fround(2.000000);
+      $$fround(1.000000) <= $$fround(2.000000);
+      $$fround(1.000000) >= $$fround(2.000000);
+    }
+    function $f11() {
+      1.000000 == 2.000000;
+      1.000000 != 2.000000;
+      1.000000 < 2.000000;
+      1.000000 > 2.000000;
+      1.000000 <= 2.000000;
+      1.000000 >= 2.000000;
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

@@ -125,6 +125,14 @@ TOOLS = {
       ]),
       '-v'
     ]
+  },
+  'run-asmjs': {
+    'EXE': 'test/run-asmjs.py',
+    'FLAGS': ' '.join([
+      '-e', '%(sexpr-wasm)s',
+      '--wasm-asmjs-executable=%(wasm-asmjs)s',
+      '--no-error-cmdline',
+    ])
   }
 }
 
@@ -658,6 +666,8 @@ def main(args):
                       help='override wasm-wast executable.')
   parser.add_argument('--wasm-interp-executable', metavar='PATH',
                       help='override wasm-interp executable.')
+  parser.add_argument('--wasm-asmjs-executable', metavar='PATH',
+                      help='override wasm-asmjs executable.')
   parser.add_argument('-v', '--verbose', help='print more diagnotic messages.',
                       action='store_true')
   parser.add_argument('--stop-interactive',
@@ -705,6 +715,9 @@ def main(args):
     if not options.wasm_interp_executable:
       options.wasm_interp_executable = os.path.join(options.exe_dir,
                                                     'wasm-interp')
+    if not options.wasm_asmjs_executable:
+      options.wasm_asmjs_executable = os.path.join(options.exe_dir,
+                                                   'wasm-asmjs')
 
   variables = {
     'sexpr-wasm':
@@ -712,6 +725,8 @@ def main(args):
     'wasm-wast': find_exe.GetWasmWastExecutable(options.wasm_wast_executable),
     'wasm-interp':
         find_exe.GetWasmInterpExecutable(options.wasm_interp_executable),
+    'wasm-asmjs':
+        find_exe.GetWasmAsmjsExecutable(options.wasm_asmjs_executable),
   }
 
   status = Status(options.verbose)

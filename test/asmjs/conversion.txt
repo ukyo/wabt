@@ -1,0 +1,85 @@
+;;; TOOL: run-asmjs
+(module
+  (func $i32.trunc_s/f32 (result i32)
+    (i32.trunc_s/f32 (f32.const 1)))
+
+  (func $i32.trunc_u/f32 (result i32)
+    (i32.trunc_u/f32 (f32.const 1)))
+
+  (func $i32.trunc_s/f64 (result i32)
+    (i32.trunc_s/f64 (f64.const 1)))
+
+  (func $i32.trunc_u/f64 (result i32)
+    (i32.trunc_u/f64 (f64.const 1)))
+
+  (func $f32.convert_s/i32 (result f32)
+    (f32.convert_s/i32 (i32.const 1)))
+
+  (func $f32.convert_u/i32 (result f32)
+    (f32.convert_u/i32 (i32.const 1)))
+
+  (func $f64.convert_s/i32 (result f64)
+    (f64.convert_s/i32 (i32.const 1)))
+
+  (func $f64.convert_u/i32 (result f64)
+    (f64.convert_u/i32 (i32.const 1)))
+
+  (func $f64.promote/f32 (result f64)
+    (f64.promote/f32 (f32.const 1)))
+
+  (func $f32.demote/f64 (result f32)
+    (f32.demote/f64 (f64.const 1)))
+
+  (func $f32.reinterpret/i32 (result f32)
+    (f32.reinterpret/i32 (i32.const 1)))
+
+  (func $i32.reinterpret/f32 (result i32)
+    (i32.reinterpret/f32 (f32.const 1))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      return ~~$$fround(1.000000);
+    }
+    function $f1() {
+      return ~~$$fround(1.000000);
+    }
+    function $f2() {
+      return ~~1.000000;
+    }
+    function $f3() {
+      return ~~1.000000;
+    }
+    function $f4() {
+      return $$fround(1);
+    }
+    function $f5() {
+      return $$fround(1);
+    }
+    function $f6() {
+      return +1;
+    }
+    function $f7() {
+      return +1;
+    }
+    function $f8() {
+      return +$$fround(1.000000);
+    }
+    function $f9() {
+      return $$fround(1.000000);
+    }
+    function $f10() {
+      return $$itof32(1);
+    }
+    function $f11() {
+      return ($$ftoi32($$fround(1.000000))|0);
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

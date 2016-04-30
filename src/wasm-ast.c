@@ -230,6 +230,39 @@ WasmImportPtr wasm_get_import_by_var(const WasmModule* module,
   return module->imports.data[index];
 }
 
+WasmResult wasm_get_local_type_by_var(const WasmModule* module,
+                                      const WasmFunc* func,
+                                      const WasmVar* var,
+                                      WasmType* out_type) {
+  if (var->type == WASM_VAR_TYPE_INDEX) {
+    size_t num_params = wasm_get_num_params(module, func);
+    if ((size_t)var->index < num_params) {
+      *out_type = func->decl.sig.param_types.data[var->index];
+      return WASM_OK;
+    } else if ((size_t)var->index <
+               wasm_get_num_params_and_locals(module, func)) {
+      *out_type = func->local_types.data[var->index - num_params];
+      return WASM_OK;
+    } else {
+      return WASM_ERROR;
+    }
+  }
+
+  int result = find_binding_index_by_name(&func->param_bindings, &var->name);
+  if (result != -1) {
+    *out_type = func->decl.sig.param_types.data[result];
+    return WASM_OK;
+  }
+
+  result = find_binding_index_by_name(&func->local_bindings, &var->name);
+  if (result != -1) {
+    *out_type = func->local_types.data[result];
+    return WASM_OK;
+  }
+
+  return WASM_ERROR;
+}
+
 void wasm_make_type_binding_reverse_mapping(
     struct WasmAllocator* allocator,
     const WasmTypeVector* types,
@@ -446,6 +479,9 @@ void wasm_destroy_expr(WasmAllocator* allocator, WasmExpr* expr) {
     case WASM_EXPR_TYPE_CONST:
     case WASM_EXPR_TYPE_CURRENT_MEMORY:
     case WASM_EXPR_TYPE_NOP:
+      break;
+    default:
+      assert(0);
       break;
   }
   wasm_free(allocator, expr);
@@ -813,6 +849,10 @@ static WasmResult visit_expr(WasmExpr* expr, WasmExprVisitor* visitor) {
 
     case WASM_EXPR_TYPE_UNREACHABLE:
       CALLBACK(on_unreachable_expr);
+      break;
+
+    default:
+      assert(0);
       break;
   }
 

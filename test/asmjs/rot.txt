@@ -1,0 +1,40 @@
+;;; TOOL: run-asmjs
+(module
+  (func $i32
+    ;; ROTL
+    (i32.rotl (i32.const 1) (i32.const 2))
+    (i32.rotl
+      (i32.rotl (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.rotl
+      (i32.const 3)
+      (i32.rotl (i32.const 1) (i32.const 2)))
+
+    ;; ROTR
+    (i32.rotr (i32.const 1) (i32.const 2))
+    (i32.rotr
+      (i32.rotr (i32.const 1) (i32.const 2))
+      (i32.const 3))
+    (i32.rotr
+      (i32.const 3)
+      (i32.rotr (i32.const 1) (i32.const 2)))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      $$rotl(1, 2);
+      $$rotl($$rotl(1, 2), 3);
+      $$rotl(3, ($$rotl(1, 2)));
+      $$rotr(1, 2);
+      $$rotr($$rotr(1, 2), 3);
+      $$rotr(3, ($$rotr(1, 2)));
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

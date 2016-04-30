@@ -1,0 +1,50 @@
+;;; TOOL: run-asmjs
+(module
+  (func $test (result i32)
+    (call $fib (i32.const 4)))
+  (func $fib (param $p i32) (result i32)
+    (local $a i32)
+    (local $b i32)
+    (local $t i32)
+    (set_local $a (i32.const 1))
+    (set_local $b (i32.const 1))
+    (loop $exit $cont
+      (set_local $p (i32.sub (get_local $p) (i32.const 1)))
+      (br_if $exit (i32.le_s (get_local $p) (i32.const 0)))
+      (set_local $t (get_local $b))
+      (set_local $b (i32.add (get_local $a) (get_local $b)))
+      (set_local $a (get_local $t))
+      (br $cont))
+    (return (get_local $b)))
+  (export "test" $test))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      return $f1(4)|0;
+    }
+    function $f1($p0) {
+      $p0 = $p0|0;
+      var $l0 = 0, $l1 = 0, $l2 = 0;
+      $l0 = 1;
+      $l1 = 1;
+      $L0: while (1) {
+        $p0 = $p0 - 1|0;
+        if (($p0|0) <= 0) break $L0;
+        $l2 = $l1;
+        $l1 = $l0 + $l1|0;
+        $l0 = $l2;
+        continue $L0;
+      }
+      return $l1|0;
+    }
+    return {
+      test: $f0,
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

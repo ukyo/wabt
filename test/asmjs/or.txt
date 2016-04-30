@@ -1,0 +1,29 @@
+;;; TOOL: run-asmjs
+(module
+  (func
+    (local i32)
+    (i32.or (get_local 0) (i32.const 7))
+    (i32.or
+      (i32.or (get_local 0) (i32.const 7))
+      (i32.const 1))
+    (i32.or
+      (i32.const 1)
+      (i32.or (get_local 0) (i32.const 7)))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      var $l0 = 0;
+      $l0 | 7;
+      $l0 | 7 | 1;
+      1 | ($l0 | 7);
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

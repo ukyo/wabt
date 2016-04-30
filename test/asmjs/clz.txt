@@ -1,0 +1,21 @@
+;;; TOOL: run-asmjs
+(module
+  (func $i32
+    (i32.clz (i32.const 1))
+    (i32.clz (i32.clz (i32.const 1)))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      $$clz(1);
+      $$clz($$clz(1));
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

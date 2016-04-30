@@ -1,0 +1,41 @@
+;;; TOOL: run-asmjs
+(module
+  (func $f32
+    (f32.max (f32.const 1) (f32.const 2))
+    (f32.max
+      (f32.max (f32.const 1) (f32.const 2))
+      (f32.const 3))
+    (f32.max
+      (f32.const 3)
+      (f32.max (f32.const 1) (f32.const 2))))
+
+  (func $f64
+    (f64.max (f64.const 1) (f64.const 2))
+    (f64.max
+      (f64.max (f64.const 1) (f64.const 2))
+      (f64.const 3))
+    (f64.max
+      (f64.const 3)
+      (f64.max (f64.const 1) (f64.const 2)))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      $$max($$fround(1.000000), $$fround(2.000000));
+      $$max($$max($$fround(1.000000), $$fround(2.000000)), $$fround(3.000000));
+      $$max($$fround(3.000000), ($$max($$fround(1.000000), $$fround(2.000000))));
+    }
+    function $f1() {
+      $$max(1.000000, 2.000000);
+      $$max($$max(1.000000, 2.000000), 3.000000);
+      $$max(3.000000, ($$max(1.000000, 2.000000)));
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

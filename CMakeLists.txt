@@ -229,6 +229,17 @@ add_executable(wasm-wast src/wasm-wast.c)
 add_dependencies(everything wasm-wast)
 target_link_libraries(wasm-wast libwasm)
 
+# wasm-asmjs
+add_executable(wasm-asmjs
+  src/wasm-asmjs.c
+  src/wasm-asmjs-writer.c
+  src/wasm-lower-expressions.c
+  ${WASM_AST_LEXER_GEN_C}
+)
+add_dependencies(everything wasm-asmjs)
+target_link_libraries(wasm-asmjs libwasm)
+
+
 # wasm-interp
 add_executable(wasm-interp src/wasm-interp.c)
 add_dependencies(everything wasm-interp)

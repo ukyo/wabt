@@ -42,6 +42,7 @@ def main(args):
                           ' an error occurs', dest='error_cmdline',
                       action='store_false')
   parser.add_argument('--use-libc-allocator', action='store_true')
+  parser.add_argument('--debug-names', action='store_true')
   parser.add_argument('file', help='test file.')
   options = parser.parse_args(args)
 
@@ -50,14 +51,16 @@ def main(args):
       error_cmdline=options.error_cmdline)
   sexpr_wasm.AppendOptionalArgs({
     '-v': options.verbose,
-    '--use-libc-allocator': options.use_libc_allocator
+    '--use-libc-allocator': options.use_libc_allocator,
+    '--debug-names': options.debug_names
   })
 
   wasm_asmjs = utils.Executable(find_exe.GetWasmAsmjsExecutable(
       options.wasm_asmjs_executable),
       error_cmdline=options.error_cmdline)
   wasm_asmjs.AppendOptionalArgs({
-    '--use-libc-allocator': options.use_libc_allocator
+    '--use-libc-allocator': options.use_libc_allocator,
+    '--debug-names': options.debug_names
   })
 
   with utils.TempDirectory(options.out_dir, 'run-asmjs-') as out_dir:

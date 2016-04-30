@@ -1,0 +1,43 @@
+;;; TOOL: run-asmjs
+(module
+  (func
+    (block
+      (block
+        (block
+          (nop))
+        (block
+          (nop)))
+      (block
+        (nop)))
+    (block
+      (nop))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      $B0: {
+        $B1: {
+          $B2: {
+            /*nop*/;
+          }
+          $B3: {
+            /*nop*/;
+          }
+        }
+        $B4: {
+          /*nop*/;
+        }
+      }
+      $B5: {
+        /*nop*/;
+      }
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

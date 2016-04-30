@@ -712,6 +712,10 @@ static void check_expr(Context* ctx,
 
     case WASM_EXPR_TYPE_UNREACHABLE:
       break;
+
+    default:
+      assert(0);
+      break;
   }
 }
 
@@ -1048,6 +1052,19 @@ WasmResult wasm_check_names(WasmAstLexer* lexer,
   size_t i;
   for (i = 0; i < script->commands.size; ++i)
     check_command(&ctx, &script->commands.data[i]);
+  return ctx.result;
+}
+
+WasmResult wasm_check_ast_module(WasmAstLexer* lexer,
+                                 const struct WasmModule* module,
+                                 WasmSourceErrorHandler* error_handler) {
+  Context ctx;
+  WASM_ZERO_MEMORY(ctx);
+  ctx.check_type = CHECK_TYPE_FULL;
+  ctx.lexer = lexer;
+  ctx.error_handler = error_handler;
+  ctx.result = WASM_OK;
+  check_module(&ctx, module);
   return ctx.result;
 }
 

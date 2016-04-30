@@ -1,0 +1,50 @@
+;;; TOOL: run-asmjs
+(module
+  (func $vi (param i32))
+  (func $fi (param i32) (result f32)
+    (f32.convert_s/i32 (get_local 0)))
+  (func $ifd (param f32 f64) (result i32)
+    (i32.trunc_s/f64
+      (f64.add
+        (f64.promote/f32 (get_local 0))
+        (get_local 1))))
+
+  (func
+    (call $vi (i32.const 1)))
+  (func (result f32)
+    (call $fi (i32.const 2)))
+  (func (result i32)
+    (call $ifd (f32.const 1) (f64.const 2))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0($p0) {
+      $p0 = $p0|0;
+    }
+    function $f1($p0) {
+      $p0 = $p0|0;
+      return $$fround($p0);
+    }
+    function $f2($p0, $p1) {
+      $p0 = $$fround($p0);
+      $p1 = +$p1;
+      return ~~(+$p0 + $p1);
+    }
+    function $f3() {
+      $f0(1);
+    }
+    function $f4() {
+      return $f1(2);
+    }
+    function $f5() {
+      return $f2($$fround(1.000000), 2.000000)|0;
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)

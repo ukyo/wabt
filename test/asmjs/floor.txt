@@ -1,0 +1,29 @@
+;;; TOOL: run-asmjs
+(module
+  (func $f32
+    (f32.floor (f32.const 1))
+    (f32.floor (f32.floor (f32.const 1))))
+
+  (func $f64
+    (f64.floor (f64.const 1))
+    (f64.floor (f64.floor (f64.const 1)))))
+(;; STDOUT ;;;
+(function (global, ffi) {
+  var module = function(stdlib, ffi, mem) {
+    "use asm";
+    function $f0() {
+      $$floor($$fround(1.000000));
+      $$floor($$floor($$fround(1.000000)));
+    }
+    function $f1() {
+      $$floor(1.000000);
+      $$floor($$floor(1.000000));
+    }
+    return {
+    };
+  };
+  var memory = new Uint8Array(0);
+  var instance = module(global, ffi, memory.buffer);
+  return instance;
+})
+;;; STDOUT ;;)
