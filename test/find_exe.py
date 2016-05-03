@@ -26,12 +26,14 @@ REPO_ROOT_DIR = os.path.dirname(SCRIPT_DIR)
 DEFAULT_SEXPR_WASM_EXE = os.path.join(REPO_ROOT_DIR, 'out', 'sexpr-wasm')
 DEFAULT_WASM_WAST_EXE = os.path.join(REPO_ROOT_DIR, 'out', 'wasm-wast')
 DEFAULT_WASM_INTERP_EXE = os.path.join(REPO_ROOT_DIR, 'out', 'wasm-interp')
+DEFAULT_WASM_ASMJS_EXE = os.path.join(REPO_ROOT_DIR, 'out', 'wasm-asmjs')
 
 
 if IS_WINDOWS:
   DEFAULT_SEXPR_WASM_EXE += '.exe'
   DEFAULT_WASM_WAST_EXE += '.exe'
   DEFAULT_WASM_INTERP_EXE += '.exe'
+  DEFAULT_WASM_ASMJS_EXE += '.exe'
 
 
 def FindExeWithFallback(name, default_exe_list, override_exe=None):
@@ -62,3 +64,7 @@ def GetWasmWastExecutable(override=None):
 
 def GetWasmInterpExecutable(override=None):
   return FindExeWithFallback('wasm-interp', [DEFAULT_WASM_INTERP_EXE], override)
+
+
+def GetWasmAsmjsExecutable(override=None):
+  return FindExeWithFallback('wasm-asmjs', [DEFAULT_WASM_ASMJS_EXE], override)
