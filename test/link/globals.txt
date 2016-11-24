@@ -1,0 +1,57 @@
+;;; TOOL: run-wasm-link
+;;; FLAGS: 
+(module
+  (global i32 (i32.const 1))
+  (global i32 (i32.const 2))
+  (global i32 (i32.const 3))
+  (func (param i32)
+     get_global 2
+     get_global 1
+     i32.add
+     get_global 0
+     i32.add
+     call 0)
+)
+(module
+  (global i64 (i64.const 2))
+  (func (param i64)
+     get_global 0
+     call 0)
+)
+(;; STDOUT ;;;
+linked.wasm:	file format wasm 0x00000d
+
+Sections:
+     TYPE start=0x0000000a end=0x00000013 (size=0x00000009) count: 2
+ FUNCTION start=0x00000019 end=0x0000001c (size=0x00000003) count: 2
+   GLOBAL start=0x0000001e end=0x00000033 (size=0x00000015) count: 4
+     CODE start=0x00000035 end=0x00000062 (size=0x0000002d) count: 2
+
+Section Details:
+TYPE:
+ - [0] (i32) -> nil
+ - [1] (i64) -> nil
+FUNCTION:
+ - [0] sig=0
+ - [1] sig=1
+GLOBAL:
+ - init i32=1
+ - init i32=2
+ - init i32=3
+ - init i64=2
+CODE:
+ - func 0
+ - func 1
+
+Code Disassembly:
+func 0
+ 000038: 23 82 80 80 80 00          | get_global 0x2
+ 00003e: 23 81 80 80 80 00          | get_global 0x1
+ 000044: 6a                         | i32.add
+ 000045: 23 80 80 80 80 00          | get_global 0
+ 00004b: 6a                         | i32.add
+ 00004c: 10 80 80 80 80 00          | call 0
+func 1
+ 000055: 23 83 80 80 80 00          | get_global 0x3
+ 00005b: 10 81 80 80 80 00          | call 0x1
+;;; STDOUT ;;)

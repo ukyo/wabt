@@ -49,6 +49,10 @@ typedef struct WasmBinaryReader {
   WasmResult (*begin_module)(uint32_t version, void* user_data);
   WasmResult (*end_module)(void* user_data);
 
+  WasmResult (*begin_section)(WasmBinaryReaderContext* ctx,
+                              WasmBinarySection section_type,
+                              uint32_t size);
+
   /* user section */
   WasmResult (*begin_user_section)(WasmBinaryReaderContext* ctx,
                                    uint32_t size,
@@ -282,6 +286,13 @@ typedef struct WasmBinaryReader {
                               void* user_data);
   WasmResult (*end_names_section)(WasmBinaryReaderContext* ctx);
 
+  /* names section */
+  WasmResult (*begin_reloc_section)(WasmBinaryReaderContext* ctx,
+                                    uint32_t size);
+  WasmResult (*on_reloc_count)(uint32_t count, void* user_data);
+  WasmResult (*on_reloc)(WasmReloc type, uint32_t offset, void* user_data);
+  WasmResult (*end_reloc_section)(WasmBinaryReaderContext* ctx);
+
   /* init_expr - used by elem, data and global sections; these functions are
    * only called between calls to begin_*_init_expr and end_*_init_expr */
   WasmResult (*on_init_expr_f32_const_expr)(uint32_t index,
@@ -308,6 +319,14 @@ WasmResult wasm_read_binary(struct WasmAllocator* allocator,
                             WasmBinaryReader* reader,
                             uint32_t num_function_passes,
                             const WasmReadBinaryOptions* options);
+
+size_t wasm_read_u32_leb128(const uint8_t* ptr,
+                            const uint8_t* end,
+                            uint32_t* out_value);
+
+size_t wasm_read_i32_leb128(const uint8_t* ptr,
+                            const uint8_t* end,
+                            uint32_t* out_value);
 WASM_EXTERN_C_END
 
 #endif /* WASM_BINARY_READER_H_ */

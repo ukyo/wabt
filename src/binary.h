@@ -22,6 +22,7 @@
 #define WASM_BINARY_LIMITS_HAS_MAX_FLAG 0x1
 
 #define WASM_BINARY_SECTION_NAME "name"
+#define WASM_BINARY_SECTION_RELOC "reloc"
 
 #define WASM_FOREACH_BINARY_SECTION(V) \
   V(USER, 0)                           \

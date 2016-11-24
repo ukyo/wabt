@@ -26,11 +26,12 @@ struct WasmWriter;
 struct WasmStream;
 
 #define WASM_WRITE_BINARY_OPTIONS_DEFAULT \
-  { NULL, WASM_TRUE, WASM_FALSE }
+  { NULL, WASM_TRUE, WASM_FALSE, WASM_FALSE }
 
 typedef struct WasmWriteBinaryOptions {
   struct WasmStream* log_stream;
   WasmBool canonicalize_lebs;
+  WasmBool linkable;
   WasmBool write_debug_names;
 } WasmWriteBinaryOptions;
 
@@ -44,6 +45,34 @@ WasmResult wasm_write_binary_script(struct WasmAllocator*,
                                     struct WasmWriter*,
                                     const struct WasmScript*,
                                     const WasmWriteBinaryOptions*);
+
+/* returns the length of the leb128 */
+uint32_t wasm_u32_leb128_length(uint32_t value);
+
+void wasm_write_u32_leb128(struct WasmStream* stream,
+                           uint32_t value,
+                           const char* desc);
+
+void wasm_write_i32_leb128(struct WasmStream* stream,
+                           int32_t value,
+                           const char* desc);
+
+void wasm_write_fixed_u32_leb128(struct WasmStream* stream,
+                                 uint32_t value,
+                                 const char* desc);
+
+uint32_t wasm_write_fixed_u32_leb128_at(struct WasmStream* stream,
+                                        uint32_t offset,
+                                        uint32_t value,
+                                        const char* desc);
+
+uint32_t wasm_write_fixed_u32_leb128_raw(uint8_t* data,
+                                         uint8_t* end,
+                                         uint32_t value);
+
+uint32_t wasm_write_fixed_i32_leb128_raw(uint8_t* data,
+                                         uint8_t* end,
+                                         int32_t value);
 WASM_EXTERN_C_END
 
 #endif /* WASM_BINARY_WRITER_H_ */

@@ -38,6 +38,10 @@ const char* g_wasm_kind_name[] = {"func", "table", "memory", "global"};
 WASM_STATIC_ASSERT(WASM_ARRAY_SIZE(g_wasm_kind_name) ==
                    WASM_NUM_EXTERNAL_KINDS);
 
+const char* g_wasm_reloc_name[] = {"RELOC_FUNC_INDEX_LEB",
+                                   "RELOC_FUNC_INDEX_SLEB",
+                                   "RELOC_GLOBAL_INDEX", "RELOC_DATA"};
+
 WasmBool wasm_is_naturally_aligned(WasmOpcode opcode, uint32_t alignment) {
   uint32_t opcode_align = wasm_get_opcode_memory_size(opcode);
   return alignment == WASM_USE_NATURAL_ALIGNMENT || alignment == opcode_align;
@@ -86,7 +90,7 @@ WasmResult wasm_read_file(WasmAllocator* allocator,
                           size_t* out_size) {
   FILE* infile = fopen(filename, "rb");
   if (!infile) {
-    fprintf(stderr, "unable to read %s\n", filename);
+    fprintf(stderr, "unable to read file: %s\n", filename);
     return WASM_ERROR;
   }
 
@@ -196,6 +200,7 @@ void wasm_default_binary_error_callback(uint32_t offset,
     fprintf(out, "error: %s\n", error);
   else
     fprintf(out, "error: @0x%08x: %s\n", offset, error);
+  fflush(out);
 }
 
 void wasm_init_stdio() {
@@ -207,4 +212,24 @@ void wasm_init_stdio() {
   if (result == -1)
     perror("Cannot set mode binary to stderr");
 #endif
+}
+
+const char* wasm_reloc_name(WasmReloc type) {
+  switch (type) {
+    case WASM_RELOC_FUNC_INDEX_LEB:
+      return "RELOC_FUNC_INDEX_LEB";
+
+    case WASM_RELOC_FUNC_INDEX_SLEB:
+      return "RELOC_FUNC_INDEX_SLEB";
+
+    case WASM_RELOC_GLOBAL_INDEX:
+      return "RELOC_GLOBAL_INDEX";
+
+    case WASM_RELOC_DATA:
+      return "RELOC_DATA";
+
+    default:
+      assert(0);
+      return "INVALID RELOC";
+  }
 }
