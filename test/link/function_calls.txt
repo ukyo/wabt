@@ -1,45 +1,53 @@
 ;;; TOOL: run-wasm-link
 ;;; FLAGS:
 (module
-  (import "foo" "bar" (func (result i32)))
+  (import "foo" "bar" (func (param i32) (result i32)))
   (func (param i32)
+     get_local 0
      call 0
      call 1)
 )
 (module
+  (import "does" "nothing" (func (param f64)))
   (func (param i64)
+     f64.const 1
+     call 0
      i64.const 10
-     call 0)
+     call 1)
 )
 (;; STDOUT ;;;
 linked.wasm:	file format wasm 0x00000d
 
 Sections:
-     TYPE start=0x0000000a end=0x00000017 (size=0x0000000d) count: 3
-   IMPORT start=0x00000019 end=0x00000024 (size=0x0000000b) count: 1
- FUNCTION start=0x0000002a end=0x0000002d (size=0x00000003) count: 2
-     CODE start=0x0000002f end=0x0000004a (size=0x0000001b) count: 2
+     TYPE start=0x0000000a end=0x0000001c (size=0x00000012) count: 4
+   IMPORT start=0x0000001e end=0x00000038 (size=0x0000001a) count: 2
+ FUNCTION start=0x0000003e end=0x00000041 (size=0x00000003) count: 2
+     CODE start=0x00000043 end=0x0000006f (size=0x0000002c) count: 2
 
 Section Details:
 TYPE:
- - [0] () -> i32
+ - [0] (i32) -> i32
  - [1] (i32) -> nil
- - [2] (i64) -> nil
+ - [2] (f64) -> nil
+ - [3] (i64) -> nil
 IMPORT:
- - foo bar
- - func sig=0
+ - func[0] sig=0 <- foo.bar
+ - func[1] sig=0 <- does.nothing
 FUNCTION:
- - [0] sig=1
- - [1] sig=2
+ - func[2] sig=1
+ - func[3] sig=3
 CODE:
  - func 0
  - func 1
 
 Code Disassembly:
 func 0
- 000032: 10 80 80 80 80 00          | call 0
- 000038: 10 81 80 80 80 00          | call 0x1
+ 000046: 20 00                      | get_local 0
+ 000048: 10 80 80 80 80 00          | call 0
+ 00004e: 10 82 80 80 80 00          | call 0x2
 func 1
- 000041: 42 0a                      | i64.const 10
- 000043: 10 81 80 80 80 00          | call 0x1
+ 000057: 44 00 00 00 00 00 00 f0 3f | f64.const 0x1p+0
+ 000060: 10 81 80 80 80 00          | call 0x1
+ 000066: 42 0a                      | i64.const 10
+ 000068: 10 83 80 80 80 00          | call 0x3
 ;;; STDOUT ;;)

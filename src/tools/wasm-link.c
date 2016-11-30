@@ -132,15 +132,42 @@ typedef struct InputBinary {
   RelocVector relocations;
   uint32_t type_index_offset;
   uint32_t function_index_offset;
+  uint32_t imported_function_index_offset;
+  uint32_t imported_global_index_offset;
   uint32_t global_index_offset;
+  uint32_t num_func_imports;
+  uint32_t num_global_imports;
 } InputBinary;
 WASM_DEFINE_VECTOR(binary, InputBinary);
+
+typedef struct Context {
+  WasmStream stream;
+  InputBinaryVector inputs;
+  uint32_t total_function_imports;
+  uint32_t total_global_imports;
+} Context;
 
 static WasmResult on_reloc(WasmReloc type, uint32_t offset, void* user_data) {
   InputBinary* binary = user_data;
   Reloc* reloc = wasm_append_reloc(s_allocator, &binary->relocations);
   reloc->type = type;
   reloc->offset = offset;
+  return WASM_OK;
+}
+
+static WasmResult on_import_func(uint32_t index,
+                                 uint32_t sig_index,
+                                 void* user_data) {
+  InputBinary* binary = user_data;
+  binary->num_func_imports++;
+  return WASM_OK;
+}
+
+static WasmResult on_import_global(uint32_t index,
+                                   WasmType type, WasmBool mutable,
+                                   void* user_data) {
+  InputBinary* binary = user_data;
+  binary->num_global_imports++;
   return WASM_OK;
 }
 
@@ -168,6 +195,8 @@ static WasmResult begin_section(WasmBinaryReaderContext* ctx,
 static WasmBinaryReader s_binary_reader = {
     .begin_section = begin_section,
     .on_reloc = on_reloc,
+    .on_import_func = on_import_func,
+    .on_import_global = on_import_global,
 };
 
 static WasmResult read_binary(uint8_t* data, size_t size, InputBinary* input_info) {
@@ -190,23 +219,35 @@ static void apply_relocations(InputBinary* binary) {
     uint32_t cur_value = 0;
     switch (r->type) {
       case WASM_RELOC_FUNC_INDEX_LEB:
-        wasm_read_u32_leb128(binary->data + r->offset, binary->data + binary->size,
-                             &cur_value);
-        cur_value += binary->function_index_offset;
+        wasm_read_u32_leb128(binary->data + r->offset,
+                             binary->data + binary->size, &cur_value);
+        if (cur_value >= binary->num_func_imports) {
+          cur_value += binary->function_index_offset;
+        } else {
+          cur_value += binary->imported_function_index_offset;
+        }
         wasm_write_fixed_u32_leb128_raw(binary->data + r->offset,
-                                        binary->data + binary->size, cur_value);
+            binary->data + binary->size, cur_value);
         break;
       case WASM_RELOC_FUNC_INDEX_SLEB:
-        wasm_read_i32_leb128(binary->data + r->offset, binary->data + binary->size,
-                             &cur_value);
-        cur_value += binary->function_index_offset;
+        wasm_read_i32_leb128(binary->data + r->offset,
+                             binary->data + binary->size, &cur_value);
+        if (cur_value >= binary->num_func_imports) {
+          cur_value += binary->function_index_offset;
+        } else {
+          cur_value += binary->imported_function_index_offset;
+        }
         wasm_write_fixed_i32_leb128_raw(binary->data + r->offset,
                                         binary->data + binary->size, cur_value);
         break;
       case WASM_RELOC_GLOBAL_INDEX:
-        wasm_read_u32_leb128(binary->data + r->offset, binary->data + binary->size,
-                             &cur_value);
-        cur_value += binary->global_index_offset;
+        wasm_read_u32_leb128(binary->data + r->offset,
+                             binary->data + binary->size, &cur_value);
+        if (cur_value >= binary->num_global_imports) {
+          cur_value += binary->global_index_offset;
+        } else {
+          cur_value += binary->imported_global_index_offset;
+        }
         wasm_write_fixed_u32_leb128_raw(binary->data + r->offset,
                                         binary->data + binary->size, cur_value);
         break;
@@ -217,15 +258,16 @@ static void apply_relocations(InputBinary* binary) {
   }
 }
 
-static void write_combined_function_section(WasmStream* stream, SectionPtrVector* sections) {
+static void write_combined_function_section(Context* ctx, SectionPtrVector* sections) {
   size_t i;
   uint32_t total_count = 0;
   for (i = 0; i < sections->size; i++) {
     SectionPtr sec = sections->data[i];
-    sec->binary->function_index_offset = total_count;
+    sec->binary->function_index_offset = ctx->total_function_imports - sec->binary->num_func_imports + total_count;
     total_count += sec->count;
   }
 
+  WasmStream* stream = &ctx->stream;
   wasm_write_u8(stream, WASM_BINARY_SECTION_FUNCTION, "section code");
   uint32_t fixup_offset = stream->offset;
   wasm_write_fixed_u32_leb128(stream, 0, "unknown size");
@@ -248,12 +290,12 @@ static void write_combined_function_section(WasmStream* stream, SectionPtrVector
   wasm_write_fixed_u32_leb128_at(stream, fixup_offset, stream->offset - start, "fixup size");
 }
 
-static void write_combined_sections(WasmStream* stream, WasmBinarySection type, SectionPtrVector* sections) {
+static void write_combined_sections(Context* ctx, WasmBinarySection type, SectionPtrVector* sections) {
   if (!sections->size)
     return;
 
   if (type == WASM_BINARY_SECTION_FUNCTION) {
-    write_combined_function_section(stream, sections);
+    write_combined_function_section(ctx, sections);
     return;
   }
 
@@ -267,7 +309,7 @@ static void write_combined_sections(WasmStream* stream, WasmBinarySection type, 
     if (type == WASM_BINARY_SECTION_TYPE)
       sec->binary->type_index_offset = total_count;
     if (type == WASM_BINARY_SECTION_GLOBAL)
-      sec->binary->global_index_offset = total_count;
+      sec->binary->global_index_offset = ctx->total_global_imports - sec->binary->num_global_imports + total_count;
     if (type == WASM_BINARY_SECTION_CODE)
       apply_relocations(sec->binary);
     total_size += sec->size;
@@ -278,6 +320,7 @@ static void write_combined_sections(WasmStream* stream, WasmBinarySection type, 
   total_size += wasm_u32_leb128_length(total_count);
 
   // Write section to stream
+  WasmStream* stream = &ctx->stream;
   wasm_write_u8(stream, type, "section code");
   wasm_write_u32_leb128(stream, total_size, "section size");
   wasm_write_u32_leb128(stream, total_count, "element count");
@@ -288,17 +331,24 @@ static void write_combined_sections(WasmStream* stream, WasmBinarySection type, 
   }
 }
 
-static void write_binary(WasmStream* stream, InputBinaryVector* inputs) {
-  wasm_write_u32(stream, WASM_BINARY_MAGIC, "WASM_BINARY_MAGIC");
-  wasm_write_u32(stream, WASM_BINARY_VERSION, "WASM_BINARY_VERSION");
+static void write_binary(Context* ctx) {
+  wasm_write_u32(&ctx->stream, WASM_BINARY_MAGIC, "WASM_BINARY_MAGIC");
+  wasm_write_u32(&ctx->stream, WASM_BINARY_VERSION, "WASM_BINARY_VERSION");
 
   // Find all the sections of each type
   SectionPtrVector sections[WASM_NUM_BINARY_SECTIONS];
   WASM_ZERO_MEMORY(sections);
 
   size_t j;
-  for (j = 0; j < inputs->size; j++) {
-    InputBinary* binary = &inputs->data[j];
+  for (j = 0; j < ctx->inputs.size; j++) {
+    InputBinary* binary = &ctx->inputs.data[j];
+    // The imported_function_index_offset is the sum of all the function
+    // imports from objects that preceed this one.  i.e. the current running
+    // total
+    binary->imported_function_index_offset = ctx->total_function_imports;
+    binary->imported_global_index_offset = ctx->total_global_imports;
+    ctx->total_function_imports += binary->num_func_imports;
+    ctx->total_global_imports += binary->num_global_imports;
     size_t i;
     for (i = 0; i < binary->sections.size; i++) {
       Section* s = &binary->sections.data[i];
@@ -311,10 +361,10 @@ static void write_binary(WasmStream* stream, InputBinaryVector* inputs) {
   // Skip USER section for now
   uint32_t t;
   for (t = 1; t < WASM_NUM_BINARY_SECTIONS; t++)
-    write_combined_sections(stream, t, &sections[t]);
+    write_combined_sections(ctx, t, &sections[t]);
 }
 
-static WasmResult link_intput(InputBinaryVector* inputs) {
+static WasmResult perform_link(Context* ctx) {
   WasmMemoryWriter writer;
   WASM_ZERO_MEMORY(writer);
   if (WASM_FAILED(wasm_init_mem_writer(s_allocator, &writer)))
@@ -325,9 +375,8 @@ static WasmResult link_intput(InputBinaryVector* inputs) {
     log_stream = &s_log_stream;
   }
 
-  WasmStream stream;
-  wasm_init_stream(&stream, &writer.base, log_stream);
-  write_binary(&stream, inputs);
+  wasm_init_stream(&ctx->stream, &writer.base, log_stream);
+  write_binary(ctx);
 
   if (s_verbose)
     wasm_writef(&s_log_stream, "writing file: %s\n", s_outfile);
@@ -342,7 +391,8 @@ int main(int argc, char** argv) {
   wasm_init_stdio();
   parse_options(argc, argv);
 
-  InputBinaryVector inputs;
+  Context context;
+  WASM_ZERO_MEMORY(context);
 
   WasmResult result = WASM_OK;
   void* data;
@@ -355,14 +405,14 @@ int main(int argc, char** argv) {
     result = wasm_read_file(s_allocator, input_filename, &data, &size);
     if (WASM_FAILED(result))
       exit(1);
-    InputBinary* b = wasm_append_binary(s_allocator, &inputs);
+    InputBinary* b = wasm_append_binary(s_allocator, &context.inputs);
     result = read_binary(data, size, b);
     if (WASM_FAILED(result)) {
       WASM_FATAL("error parsing file: %s\n", input_filename);
     }
   }
 
-  result = link_intput(&inputs);
+  result = perform_link(&context);
   if (WASM_FAILED(result))
     exit(1);
 
