@@ -35,7 +35,7 @@ IMPORT:
  - func[1] sig=0 <- does.nothing
 FUNCTION:
  - func[2] sig=1
- - func[3] sig=3
+ - func[3] sig=2
 CODE:
  - func 0
  - func 1

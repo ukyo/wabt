@@ -258,15 +258,9 @@ static void apply_relocations(InputBinary* binary) {
   }
 }
 
-static void write_combined_function_section(Context* ctx, SectionPtrVector* sections) {
-  size_t i;
-  uint32_t total_count = 0;
-  for (i = 0; i < sections->size; i++) {
-    SectionPtr sec = sections->data[i];
-    sec->binary->function_index_offset = ctx->total_function_imports - sec->binary->num_func_imports + total_count;
-    total_count += sec->count;
-  }
-
+static void write_combined_function_section(Context* ctx,
+                                            SectionPtrVector* sections,
+                                            uint32_t total_count) {
   WasmStream* stream = &ctx->stream;
   wasm_write_u8(stream, WASM_BINARY_SECTION_FUNCTION, "section code");
   uint32_t fixup_offset = stream->offset;
@@ -274,6 +268,7 @@ static void write_combined_function_section(Context* ctx, SectionPtrVector* sect
   uint32_t start = stream->offset;
   wasm_write_u32_leb128(stream, total_count, "element count");
 
+  uint32_t i;
   for (i = 0; i < sections->size; i++) {
     SectionPtr sec = sections->data[i];
     uint32_t count = sec->count;
@@ -290,13 +285,20 @@ static void write_combined_function_section(Context* ctx, SectionPtrVector* sect
   wasm_write_fixed_u32_leb128_at(stream, fixup_offset, stream->offset - start, "fixup size");
 }
 
-static void write_combined_sections(Context* ctx, WasmBinarySection type, SectionPtrVector* sections) {
+static void write_combined_sections(Context* ctx,
+                                    WasmBinarySection type,
+                                    SectionPtrVector* sections) {
   if (!sections->size)
     return;
 
-  if (type == WASM_BINARY_SECTION_FUNCTION) {
-    write_combined_function_section(ctx, sections);
-    return;
+  switch (type) {
+    case WASM_BINARY_SECTION_MEMORY:
+    case WASM_BINARY_SECTION_START:
+      if (sections->size > 1)
+        WASM_FATAL("don't know how to combine section of type: %d\n", type);
+      break;
+    default:
+      break;
   }
 
   size_t i;
@@ -306,39 +308,37 @@ static void write_combined_sections(Context* ctx, WasmBinarySection type, Sectio
   // Sum section size and element count
   for (i = 0; i < sections->size; i++) {
     SectionPtr sec = sections->data[i];
-    if (type == WASM_BINARY_SECTION_TYPE)
-      sec->binary->type_index_offset = total_count;
-    if (type == WASM_BINARY_SECTION_GLOBAL)
-      sec->binary->global_index_offset = ctx->total_global_imports - sec->binary->num_global_imports + total_count;
-    if (type == WASM_BINARY_SECTION_CODE)
-      apply_relocations(sec->binary);
     total_size += sec->size;
     total_count += sec->count;
   }
 
-  // Total section size includes the element count leb123.
-  total_size += wasm_u32_leb128_length(total_count);
+  if (type == WASM_BINARY_SECTION_FUNCTION) {
+    write_combined_function_section(ctx, sections, total_count);
+  } else {
+    // Total section size includes the element count leb123.
+    total_size += wasm_u32_leb128_length(total_count);
 
-  // Write section to stream
-  WasmStream* stream = &ctx->stream;
-  wasm_write_u8(stream, type, "section code");
-  wasm_write_u32_leb128(stream, total_size, "section size");
-  wasm_write_u32_leb128(stream, total_count, "element count");
-  for (i = 0; i < sections->size; i++) {
-    SectionPtr sec = sections->data[i];
-    uint8_t* start = &sec->binary->data[sec->offset];
-    wasm_write_data(stream, start, sec->size, "section content");
+    // Write section to stream
+    WasmStream* stream = &ctx->stream;
+    wasm_write_u8(stream, type, "section code");
+    wasm_write_u32_leb128(stream, total_size, "section size");
+    wasm_write_u32_leb128(stream, total_count, "element count");
+    for (i = 0; i < sections->size; i++) {
+      SectionPtr sec = sections->data[i];
+      uint8_t* start = &sec->binary->data[sec->offset];
+      wasm_write_data(stream, start, sec->size, "section content");
+    }
   }
 }
 
+
 static void write_binary(Context* ctx) {
-  wasm_write_u32(&ctx->stream, WASM_BINARY_MAGIC, "WASM_BINARY_MAGIC");
-  wasm_write_u32(&ctx->stream, WASM_BINARY_VERSION, "WASM_BINARY_VERSION");
 
   // Find all the sections of each type
   SectionPtrVector sections[WASM_NUM_BINARY_SECTIONS];
   WASM_ZERO_MEMORY(sections);
 
+  size_t i;
   size_t j;
   for (j = 0; j < ctx->inputs.size; j++) {
     InputBinary* binary = &ctx->inputs.data[j];
@@ -349,7 +349,6 @@ static void write_binary(Context* ctx) {
     binary->imported_global_index_offset = ctx->total_global_imports;
     ctx->total_function_imports += binary->num_func_imports;
     ctx->total_global_imports += binary->num_global_imports;
-    size_t i;
     for (i = 0; i < binary->sections.size; i++) {
       Section* s = &binary->sections.data[i];
       SectionPtrVector* sec_list = &sections[s->type];
@@ -358,10 +357,40 @@ static void write_binary(Context* ctx) {
     }
   }
 
-  // Skip USER section for now
-  uint32_t t;
-  for (t = 1; t < WASM_NUM_BINARY_SECTIONS; t++)
-    write_combined_sections(ctx, t, &sections[t]);
+  // Calculate offsets needed for relocation
+  uint32_t total_count = 0;
+  for (i = 0; i < sections[WASM_BINARY_SECTION_TYPE].size; i++) {
+    SectionPtr sec = sections[WASM_BINARY_SECTION_FUNCTION].data[i];
+    sec->binary->type_index_offset = total_count;
+    total_count += sec->count;
+  }
+
+  total_count = 0;
+  for (i = 0; i < sections[WASM_BINARY_SECTION_GLOBAL].size; i++) {
+    SectionPtr sec = sections[WASM_BINARY_SECTION_FUNCTION].data[i];
+    sec->binary->global_index_offset = ctx->total_global_imports - sec->binary->num_global_imports + total_count;
+    total_count += sec->count;
+  }
+
+  total_count = 0;
+  for (i = 0; i < sections[WASM_BINARY_SECTION_FUNCTION].size; i++) {
+    SectionPtr sec = sections[WASM_BINARY_SECTION_FUNCTION].data[i];
+    sec->binary->function_index_offset = ctx->total_function_imports - sec->binary->num_func_imports + total_count;
+    total_count += sec->count;
+  }
+
+  // Preform relocations in-place
+  for (j = 0; j < ctx->inputs.size; j++) {
+    InputBinary* binary = &ctx->inputs.data[j];
+    apply_relocations(binary);
+  }
+
+  // Write the final binary
+  wasm_write_u32(&ctx->stream, WASM_BINARY_MAGIC, "WASM_BINARY_MAGIC");
+  wasm_write_u32(&ctx->stream, WASM_BINARY_VERSION, "WASM_BINARY_VERSION");
+  for (i = 1; i < WASM_NUM_BINARY_SECTIONS; i++) {
+    write_combined_sections(ctx, i, &sections[i]);
+  }
 }
 
 static WasmResult perform_link(Context* ctx) {
@@ -371,9 +400,8 @@ static WasmResult perform_link(Context* ctx) {
     WASM_FATAL("unable to open memory writer for writing\n");
 
   WasmStream* log_stream = NULL;
-  if (s_verbose) {
+  if (s_verbose)
     log_stream = &s_log_stream;
-  }
 
   wasm_init_stream(&ctx->stream, &writer.base, log_stream);
   write_binary(ctx);

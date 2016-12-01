@@ -479,7 +479,7 @@ static WasmResult on_export(uint32_t index,
                             uint32_t item_index,
                             WasmStringSlice name,
                             void* user_data) {
-  print_details(user_data, " - [%d] %s ", item_index, wasm_get_kind_name(kind));
+  print_details(user_data, " - %s[%d] ", wasm_get_kind_name(kind), item_index);
   print_details(user_data, PRIstringslice, WASM_PRINTF_STRING_SLICE_ARG(name));
   print_details(user_data, "\n");
   return WASM_OK;
